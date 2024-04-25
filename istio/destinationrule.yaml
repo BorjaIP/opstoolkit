@@ -1,0 +1,10 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: tls-app
+  namespace: default
+spec:
+  host: wikipedia.org
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
