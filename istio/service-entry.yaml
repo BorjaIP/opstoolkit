@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: proxy
+  namespace: default
+spec:
+  hosts:
+    - my-company-proxy.com # ignored
+  addresses:
+    - 100.104.50.101
+  ports:
+    - number: 80
+      name: tcp
+      protocol: TCP
+  location: MESH_EXTERNAL
