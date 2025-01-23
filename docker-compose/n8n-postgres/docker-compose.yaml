@@ -1,8 +1,8 @@
 version: '3.8'
 
 volumes:
-  db_storage:
-  n8n_storage:
+  db_data:
+  n8n_data:
 
 networks:
   n8n:
@@ -18,8 +18,10 @@ services:
       - POSTGRES_DB=n8n
       - POSTGRES_NON_ROOT_USER
       - POSTGRES_NON_ROOT_PASSWORD
+    networks:
+      - n8n
     volumes:
-      - db_storage:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
       - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
@@ -43,5 +45,7 @@ services:
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_NON_ROOT_PASSWORD}
     ports:
       - 5678:5678
+    networks:
+      - n8n
     volumes:
-      - n8n_storage:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
