@@ -12,6 +12,7 @@ services:
       - 9092:9092
     networks:
       - qalocal
+      
   jenkins:
     image: jenkins:2.60.3
     container_name: jenkins
