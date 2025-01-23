@@ -1,0 +1,33 @@
+version: '3.2'
+
+networks:
+  observability:
+
+volumes:
+  grafana-data:
+  prometheus-data:
+
+services:
+  grafana:
+    image: docker.io/grafana/grafana-oss:11.4.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - observability
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+  prometheus:
+    image: docker.io/prom/prometheus:v3.1.0
+    container_name: prometheus
+    restart: unless-stopped
+    command: "--config.file=/etc/prometheus/prometheus.yaml"
+    ports:
+      - 9090:9090
+    networks:
+      - observability
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus
