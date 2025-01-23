@@ -1,0 +1,30 @@
+version: '3.8'
+
+volumes:
+  influxdb_data:
+
+networks:
+  influxdb:
+
+services:
+  influxdb:
+    image: docker.io/library/influxdb:2.7.11-alpine
+    container_name: influxdb
+    restart: always
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=my-user
+      - DOCKER_INFLUXDB_INIT_PASSWORD=my-password
+      - DOCKER_INFLUXDB_INIT_ORG=my-org
+      - DOCKER_INFLUXDB_INIT_BUCKET=my-bucket
+    ports:
+      - '8086:8086'
+    networks:
+      - influxdb
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - /etc/influxdb2:/etc/influxdb2
+      # (Optional) when using certificate
+      # - /etc/ssl/cert.pem/:/etc/ssl/cert.pem  # if you're using self-signed certs
+      # - /etc/ssl/cert-key.pem/:/etc/ssl/cert-key.pem  # if you're using self-signed certs
+    # command: influxd --tls-cert=/etc/ssl/cert.pem --tls-key=/etc/ssl/cert-key.pem
