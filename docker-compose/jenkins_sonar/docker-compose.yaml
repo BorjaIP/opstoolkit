@@ -1,0 +1,29 @@
+version: '3.2'
+
+networks:
+  qalocal:
+
+services:
+  sonarqube:
+    image: sonarqube:6.7-alpine
+    container_name: sonarqube
+    ports:
+      - 9000:9000
+      - 9092:9092
+    networks:
+      - qalocal
+  jenkins:
+    image: jenkins:2.60.3
+    container_name: jenkins
+    depends_on: [sonarqube]
+    privileged: true
+    user: root
+    ports:
+      - 8080:8080
+      - 50000:50000
+    networks:
+      - qalocal
+    volumes:
+      - /tmp/jenkins:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
