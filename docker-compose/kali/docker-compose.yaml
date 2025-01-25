@@ -1,0 +1,51 @@
+version: '3.8'
+
+networks:
+  kalilinux:
+  driver: bridge
+  internal: true
+
+# Use a VNC like KasmVNC for see content in your browser
+# https://github.com/linuxserver/docker-kali-linux
+services:
+  postgres:
+    image: lscr.io/linuxserver/kali-linux:latest # Check for last version
+    container_name: kali
+    restart: unless-stopped
+    environment:
+      - PUID=${UID-1000}
+      - PGID=${UID-1000}
+      - TZ=${TZ:-Europe/Madrid}
+      - SUBFOLDER=/ # Optional
+      - "TITLE=Kali Linux" # Optional
+    shm_size: "1gb"
+    security-opt:
+      - seccopm=unconfined # Optional
+    devices:
+      - /dev/dri:/dev/dri # Optional
+    ports:
+      - 3000:3000
+      - 3001:3001
+    networks:
+      - kalilinux
+      - default
+    volumes:
+      - .config:/config
+      - /var/run/docker.sock:/var/run/docker.sock # Optional
+    # User for GPU computational resources
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [compute,video,graphics,utility]
+
+    web-dvwa:
+      image: vulnerables/web-dvwa
+      container_name: web-dvwa
+      restart: unless-stopped
+      command:  /bin/sh -c "while true; do sleep 30; done;"
+      networks:
+        - kalilinux
+    
