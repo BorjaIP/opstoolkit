@@ -1,0 +1,25 @@
+version: '3.8'
+
+networks:
+  firefox:
+
+# Use a VNC like KasmVNC for see content in your browser
+services:
+  postgres:
+    image: lscr.io/linuxserver/firefox:latest # Check for last version
+    container_name: firefox
+    restart: unless-stopped
+    environment:
+      - PUID=${UID-1000}
+      - PGID=${UID-1000}
+      - TZ=${TZ:-Europe/Madrid}
+      - FIREFOX_CLI=https://www.linuxserver.io/ # Optional
+    shm_size: "1gb"
+    security-opt:
+      - seccopm=unconfined # Optional
+    ports:
+      - 3000:3000
+      - 3001:3001
+    networks:
+      - firefox
+    
