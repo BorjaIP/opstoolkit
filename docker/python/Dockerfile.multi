@@ -1,20 +1,16 @@
 # syntax=docker/dockerfile:1.4
-# --- Base Image ---
+
+# --- Build stage ---
 FROM python:3.12-slim AS builder
 
-ENV APP_ROOT=/opt/app \
-    PYTHONPATH=/opt/app \
-    PATH=$HOME/.local/bin/:$PATH \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONIOENCODING=UTF-8 \
-    PIP_NO_CACHE_DIR=off \
-    LC_ALL=en_US.UTF-8 \
-    LANG=en_US.UTF-8
+COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/
 
-WORKDIR ${APP_ROOT}
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
-# Install system dependencies
+WORKDIR /app
+
+# Install system dependencies needed for building wheels
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     gcc \
@@ -22,39 +18,43 @@ RUN --mount=type=cache,target=/var/cache/apt \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
-COPY requirements/requirements.txt /tmp/requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip \
- && python -m pip install --prefix=/install -r /tmp/requirements.txt
+# Install dependencies first (cached layer)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev
 
-# Copy application source code
-COPY . .
+# Copy application code and install project
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-# --- Final image ---
+# --- Runtime stage ---
 FROM python:3.12-slim AS runtime
 
-ENV APP_ROOT=/opt/app \
-    PYTHONPATH=/opt/app \
-    PATH=$HOME/.local/bin/:$PATH \
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8
 
+WORKDIR /app
+
+# Install only runtime system libraries (no gcc)
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user
 RUN useradd -u 1001 appuser
 
-WORKDIR ${APP_ROOT}
+# Copy virtualenv and app from builder
+COPY --from=builder --chown=1001:0 /app /app
 
-# Copy installed python packages from builder
-COPY --from=builder /install /usr/local
+ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy only application source code
-COPY --chown=1001:1001 . .
-
-# Switch to non-root user
 USER appuser
 
 EXPOSE 8080

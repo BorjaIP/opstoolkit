@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1.4
-FROM python:3.12-slim AS base
+FROM python:3.12-slim
 
-# Enable BuildKit-specific features
+COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/
+
 ENV APP_ROOT=/opt/app \
-    PYTHONPATH=/opt/app \
-    PATH=$HOME/.local/bin/:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
-    PIP_NO_CACHE_DIR=off \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8
 
@@ -22,24 +22,22 @@ RUN --mount=type=cache,target=/var/cache/apt \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user early
+# Create non-root user
 RUN useradd -u 1001 appuser
 
-# Pre-copy only requirements
-COPY requirements/requirements.txt /tmp/requirements.txt
+# Install dependencies first (cached layer)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev
 
-# Install Python dependencies using cache for pip
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip \
- && python -m pip install -r /tmp/requirements.txt
-
-# Copy application code
+# Copy application code and install project
 COPY --chown=1001:0 . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-# Set permissions (optional if needed)
 RUN chown -R appuser:appuser ${APP_ROOT}
 
-# Switch to non-root user
 USER appuser
 
 EXPOSE 8080

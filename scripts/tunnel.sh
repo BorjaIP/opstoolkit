@@ -79,6 +79,22 @@ kubectl exec "$POD" -n "$NAMESPACE" -- chmod +x /tmp/socat
 echo "✔ socat copied to /tmp/socat inside the pod"
 
 ##########################
+# Cleanup on exit
+##########################
+cleanup() {
+  echo ""
+  echo "◆ Killing socat inside the pod..."
+  kill "$SOCAT_PID" 2>/dev/null || true
+  kubectl exec "$POD" -n "$NAMESPACE" -- sh -c '
+    for p in /proc/[0-9]*/cmdline; do
+      cat "$p" 2>/dev/null | tr "\0" " " | grep -q socat && kill $(echo "$p" | cut -d/ -f3)
+    done
+  ' 2>/dev/null || true
+  echo "✔ Tunnel closed"
+}
+trap cleanup EXIT INT TERM
+
+##########################
 # Launch socat relay + port-forward
 ##########################
 echo "◆ Starting relay in Pod"
@@ -89,5 +105,6 @@ echo "  Press Ctrl+C to close"
 kubectl exec "$POD" -n "$NAMESPACE" -- /tmp/socat \
   "TCP-LISTEN:$SRC_PORT,fork" \
   "TCP:$DB_HOST:$DEST_PORT" &
+SOCAT_PID=$!
 
 kubectl port-forward "pod/$POD" "$LOCAL_PORT:$SRC_PORT" -n "$NAMESPACE"

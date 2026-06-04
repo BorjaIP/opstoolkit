@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v6.0.0
     hooks:
       - id: check-builtin-literals
       - id: check-case-conflict
@@ -15,7 +15,7 @@ repos:
           - --pytest-test-first
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: 7.0.0
     hooks:
       - id: isort
         name: isort
@@ -23,24 +23,15 @@ repos:
         args: [--sp=pyproject.toml]
 
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 26.3.0
     hooks:
       - id: black
         name: black
         files: ./
         args: [--config=pyproject.toml]
 
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        name: pydocstyle
-        files: ./
-        args: [--config=pyproject.toml]
-        exclude: ^tests/
-
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.261
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
     hooks:
       - id: ruff
         args:

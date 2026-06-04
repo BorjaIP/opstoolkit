@@ -1,0 +1,17 @@
+services:
+  console:
+    image: redpandadata/console:v3.7.1
+    container_name: redpanda-console
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+      KAFKA_TLS_ENABLED: "true"
+      KAFKA_SASL_ENABLED: "true"
+      KAFKA_SASL_MECHANISM: "SCRAM-SHA-512"
+      KAFKA_SASL_USERNAME: "${KAFKA_SASL_USERNAME}"
+      KAFKA_SASL_PASSWORD: "${KAFKA_SASL_PASSWORD}"
+
+      KAFKA_SCHEMAREGISTRY_ENABLED: "true"
+      KAFKA_SCHEMAREGISTRY_URLS: "${KAFKA_SCHEMAREGISTRY_URLS}"
